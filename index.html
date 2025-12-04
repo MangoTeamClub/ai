@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MangoAI - 多模型AI聊天助手</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e6e6e6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 40px);
+            background-color: rgba(0, 0, 0, 0.4);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        
+        header {
+            background: linear-gradient(to right, #0f3460, #1a1a2e);
+            padding: 20px 30px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 5px;
+            background: linear-gradient(90deg, #00b4db, #0083b0);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .subtitle {
+            color: #a0a0c0;
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+        
+        .main-content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        .sidebar {
+            width: 280px;
+            background-color: rgba(15, 23, 42, 0.8);
+            padding: 25px 20px;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+        
+        .model-selector {
+            margin-bottom: 30px;
+        }
+        
+        .model-selector h2 {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            color: #64b5f6;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .model-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .model-item {
+            padding: 14px 15px;
+            background-color: rgba(30, 41, 59, 0.7);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .model-item:hover {
+            background-color: rgba(30, 41, 59, 0.9);
+            transform: translateX(5px);
+        }
+        
+        .model-item.active {
+            background-color: rgba(30, 64, 175, 0.3);
+            border-left-color: #3b82f6;
+            box-shadow: 0 5px 15px rgba(59, 130, 246, 0.2);
+        }
+        
+        .model-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            color: white;
+            flex-shrink: 0;
+        }
+        
+        .model-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .model-info h3 {
+            font-size: 1rem;
+            margin-bottom: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .model-info p {
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+        
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .chat-header {
+            padding: 20px 30px;
+            background-color: rgba(15, 23, 42, 0.6);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .current-model {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .current-model-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+        
+        .model-details {
+            min-width: 0;
+        }
+        
+        .model-details h2 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .model-details p {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .chat-container {
+            flex: 1;
+            padding: 25px 30px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .message {
+            max-width: 85%;
+            padding: 18px 22px;
+            border-radius: 18px;
+            line-height: 1.5;
+            animation: fadeIn 0.3s ease;
+            word-wrap: break-word;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .user-message {
+            align-self: flex-end;
+            background: linear-gradient(135deg, #0ea5e9, #3b82f6);
+            border-bottom-right-radius: 5px;
+            color: white;
+        }
+        
+        .ai-message {
+            align-self: flex-start;
+            background-color: rgba(30, 41, 59, 0.7);
+            border-bottom-left-radius: 5px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        
+        .typing-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 10px 15px;
+            background-color: rgba(30, 41, 59, 0.7);
+            border-radius: 18px;
+            align-self: flex-start;
+            border-bottom-left-radius: 5px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .typing-indicator span {
+            height: 8px;
+            width: 8px;
+            border-radius: 50%;
+            background-color: #94a3b8;
+            animation: typing 1.5s infinite ease-in-out;
+        }
+        
+        .typing-indicator span:nth-child(1) { animation-delay: 0s; }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-8px); }
+        }
+        
+        .input-area {
+            padding: 20px 30px;
+            background-color: rgba(15, 23, 42, 0.6);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            gap: 15px;
+        }
+        
+        textarea {
+            flex: 1;
+            padding: 18px 20px;
+            background-color: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            color: white;
+            font-size: 1rem;
+            resize: none;
+            outline: none;
+            transition: border-color 0.3s;
+            line-height: 1.5;
+            min-height: 60px;
+            max-height: 150px;
+        }
+        
+        textarea:focus {
+            border-color: #3b82f6;
+        }
+        
+        .send-button {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0ea5e9, #3b82f6);
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .send-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4);
+        }
+        
+        .send-button:disabled {
+            background: #64748b;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .clear-button {
+            padding: 12px 20px;
+            background-color: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            width: 100%;
+        }
+        
+        .clear-button:hover {
+            background-color: rgba(239, 68, 68, 0.3);
+        }
+        
+        .quick-questions {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .quick-questions h3 {
+            font-size: 1rem;
+            color: #64b5f6;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .quick-question {
+            padding: 8px 12px;
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 8px;
+            color: #93c5fd;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+            text-align: left;
+            white-space: normal;
+            word-wrap: break-word;
+        }
+        
+        .quick-question:hover {
+            background: rgba(59, 130, 246, 0.3);
+        }
+        
+        footer {
+            text-align: center;
+            padding: 15px;
+            color: #94a3b8;
+            font-size: 0.9rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                padding: 15px;
+                max-height: 300px;
+            }
+            
+            .model-list {
+                flex-direction: row;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                padding-bottom: 10px;
+            }
+            
+            .model-item {
+                flex: 0 0 auto;
+                width: 200px;
+            }
+            
+            .chat-container {
+                padding: 15px;
+            }
+            
+            .message {
+                max-width: 95%;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .chat-header {
+                padding: 15px;
+            }
+            
+            .input-area {
+                padding: 15px;
+            }
+        }
+        
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(100, 149, 237, 0.6);
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(100, 149, 237, 0.8);
+        }
+        
+        /* 加载动画 */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: #94a3b8;
+        }
+        
+        .loading::after {
+            content: '';
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(100, 149, 237, 0.3);
+            border-top-color: rgba(100, 149, 237, 0.8);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* 侧边栏状态指示器 */
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            margin-top: 15px;
+            border-radius: 8px;
+            background-color: rgba(30, 41, 59, 0.7);
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+        
+        .status-indicator.online {
+            color: #10b981;
+        }
+        
+        .status-indicator.offline {
+            color: #ef4444;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-robot"></i> MangoAI 多模型聊天助手</h1>
+            <p class="subtitle">一键切换6种AI模型，所有接口均为GET请求</p>
+        </header>
+        
+        <div class="main-content">
+            <!-- 侧边栏 - 使用静态HTML结构确保显示 -->
+            <div class="sidebar">
+                <div class="model-selector">
+                    <h2><i class="fas fa-brain"></i> 选择AI模型</h2>
+                    <div class="model-list" id="modelList">
+                        <!-- 静态模型列表，确保即使JS未加载也能显示 -->
+                        <div class="model-item active" data-model-id="1">
+                            <div class="model-icon" style="background-color: #4285f4;">
+                                <i class="fab fa-google"></i>
+                            </div>
+                            <div class="model-info">
+                                <h3>Gemini 2.5</h3>
+                                <p>GET请求</p>
+                            </div>
+                        </div>
+                        
+                        <div class="model-item" data-model-id="2">
+                            <div class="model-icon" style="background-color: #10b981;">
+                                <i class="fas fa-code"></i>
+                            </div>
+                            <div class="model-info">
+                                <h3>Deepseek-3.1</h3>
+                                <p>GET请求</p>
+                            </div>
+                        </div>
+                        
+                        <div class="model-item" data-model-id="3">
+                            <div class="model-icon" style="background-color: #bf25c1;">
+                                <i class="fas fa-bolt"></i>
+                            </div>
+                            <div class="model-info">
+                                <h3>Grok-4</h3>
+                                <p>GET请求</p>
+                            </div>
+                        </div>
+                        
+                        <div class="model-item" data-model-id="4">
+                            <div class="model-icon" style="background-color: #f59e0b;">
+                                <i class="fas fa-cube"></i>
+                            </div>
+                            <div class="model-info">
+                                <h3>豆包</h3>
+                                <p>GET请求</p>
+                            </div>
+                        </div>
+                        
+                        <div class="model-item" data-model-id="5">
+                            <div class="model-icon" style="background-color: #3b82f6;">
+                                <i class="fas fa-brain"></i>
+                            </div>
+                            <div class="model-info">
+                                <h3>Deepseek-3.2</h3>
+                                <p>GET请求</p>
+                            </div>
+                        </div>
+                        
+                        <div class="model-item" data-model-id="6">
+                            <div class="model-icon" style="background-color: #ef4444;">
+                                <i class="fas fa-infinity"></i>
+                            </div>
+                            <div class="model-info">
+                                <h3>混元</h3>
+                                <p>GET请求</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="quick-questions">
+                    <h3><i class="fas fa-lightbulb"></i> 快捷问题</h3>
+                    <div class="quick-question" data-question="你好，请介绍一下自己">简单介绍</div>
+                    <div class="quick-question" data-question="用JavaScript写一个简单的计算器代码">写代码</div>
+                    <div class="quick-question" data-question="解释一下人工智能的基本原理">AI原理</div>
+                    <div class="quick-question" data-question="推荐5本学习编程的书籍">推荐书籍</div>
+                </div>
+                
+                <div class="status-indicator online" id="statusIndicator">
+                    <i class="fas fa-circle"></i> 所有模型可用
+                </div>
+                
+                <div style="margin-top: auto; padding-top: 15px;">
+                    <button class="clear-button" id="clearChat">
+                        <i class="fas fa-trash-alt"></i> 清空对话
+                    </button>
+                </div>
+            </div>
+            
+            <div class="chat-area">
+                <div class="chat-header">
+                    <div class="current-model">
+                        <div class="current-model-icon" id="currentModelIcon" style="background-color: #4285f4;">
+                            <i class="fab fa-google"></i>
+                        </div>
+                        <div class="model-details">
+                            <h2 id="currentModelName">Gemini 2.5</h2>
+                            <p id="currentModelDesc">Google最新AI模型，多模态能力强大</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chat-container" id="chatContainer">
+                    <div class="message ai-message">
+                        <div class="message-header">
+                            <i class="fas fa-robot"></i> MangoAI助手
+                        </div>
+                        您好！我是MangoAI助手，支持6种不同的AI模型。请从左侧选择您想对话的AI模型，然后开始提问吧！所有接口均为GET请求，使用简单快捷。
+                    </div>
+                </div>
+                
+                <div class="input-area">
+                    <textarea id="userInput" placeholder="输入您的问题...（按Enter发送，Shift+Enter换行）" rows="1"></textarea>
+                    <button class="send-button" id="sendButton">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>MangoAI 多模型聊天界面 | 所有接口均为GET请求 | 仅供演示使用</p>
+        </footer>
+    </div>
+
+    <script>
+        // 模型配置数据 - 所有接口都是GET请求
+        const models = [
+            {
+                id: 1,
+                name: "Gemini 2.5",
+                description: "Google最新AI模型，多模态能力强大",
+                endpoint: "https://api.jkyai.top/API/gemini2.5/index.php",
+                icon: "fab fa-google",
+                color: "#4285f4"
+            },
+            {
+                id: 2,
+                name: "Deepseek-3.1",
+                description: "深度求索开源模型，代码能力突出",
+                endpoint: "https://api.jkyai.top/API/depsek3.1.php",
+                icon: "fas fa-code",
+                color: "#10b981"
+            },
+            {
+                id: 3,
+                name: "Grok-4",
+                description: "xAI公司模型，以幽默和直率著称",
+                endpoint: "https://api.jkyai.top/API/grok4-model/index.php",
+                icon: "fas fa-bolt",
+                color: "#bf25c1"
+            },
+            {
+                id: 4,
+                name: "豆包",
+                description: "字节跳动AI模型，中文理解优秀",
+                endpoint: "https://api.jkyai.top/API/doubao.php",
+                icon: "fas fa-cube",
+                color: "#f59e0b"
+            },
+            {
+                id: 5,
+                name: "Deepseek-3.2",
+                description: "深度求索升级版，推理能力增强",
+                endpoint: "https://api.jkyai.top/API/depsek3.2.php",
+                icon: "fas fa-brain",
+                color: "#3b82f6"
+            },
+            {
+                id: 6,
+                name: "混元",
+                description: "腾讯AI模型，综合能力强",
+                endpoint: "https://api.jkyai.top/API/yuanbao.php",
+                icon: "fas fa-infinity",
+                color: "#ef4444"
+            }
+        ];
+
+        // 当前选中的模型
+        let currentModel = models[0];
+        // 对话历史
+        let conversationHistory = [];
+        // 是否正在等待响应
+        let isWaitingForResponse = false;
+
+        // DOM元素
+        const modelListElement = document.getElementById('modelList');
+        const currentModelNameElement = document.getElementById('currentModelName');
+        const currentModelDescElement = document.getElementById('currentModelDesc');
+        const currentModelIconElement = document.getElementById('currentModelIcon');
+        const chatContainer = document.getElementById('chatContainer');
+        const userInput = document.getElementById('userInput');
+        const sendButton = document.getElementById('sendButton');
+        const clearChatButton = document.getElementById('clearChat');
+        const statusIndicator = document.getElementById('statusIndicator');
+        const quickQuestions = document.querySelectorAll('.quick-question');
+
+        // 初始化模型列表事件
+        function initModelListEvents() {
+            // 为每个模型项添加点击事件
+            const modelItems = document.querySelectorAll('.model-item');
+            modelItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    const modelId = parseInt(item.getAttribute('data-model-id'));
+                    switchModel(modelId);
+                });
+            });
+        }
+
+        // 切换模型
+        function switchModel(modelId) {
+            // 找到对应的模型
+            const model = models.find(m => m.id === modelId);
+            if (!model) return;
+            
+            // 更新当前模型
+            currentModel = model;
+            
+            // 更新模型列表的激活状态
+            const modelItems = document.querySelectorAll('.model-item');
+            modelItems.forEach(item => {
+                const itemModelId = parseInt(item.getAttribute('data-model-id'));
+                if (itemModelId === modelId) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+            
+            // 更新当前模型显示
+            updateCurrentModelDisplay();
+            
+            // 添加切换模型提示
+            addMessageToChat('system', `已切换到 ${currentModel.name} 模型`);
+        }
+
+        // 更新当前模型显示
+        function updateCurrentModelDisplay() {
+            currentModelNameElement.textContent = currentModel.name;
+            currentModelDescElement.textContent = currentModel.description;
+            currentModelIconElement.innerHTML = `<i class="${currentModel.icon}"></i>`;
+            currentModelIconElement.style.backgroundColor = currentModel.color;
+        }
+
+        // 添加消息到聊天窗口
+        function addMessageToChat(sender, message) {
+            const messageElement = document.createElement('div');
+            
+            if (sender === 'user') {
+                messageElement.className = 'message user-message';
+                messageElement.innerHTML = `
+                    <div class="message-header">
+                        <i class="fas fa-user"></i> 您
+                    </div>
+                    ${message}
+                `;
+            } else if (sender === 'ai') {
+                messageElement.className = 'message ai-message';
+                messageElement.innerHTML = `
+                    <div class="message-header">
+                        <i class="fas fa-robot"></i> ${currentModel.name}
+                    </div>
+                    ${message}
+                `;
+            } else {
+                // 系统消息
+                messageElement.className = 'message ai-message';
+                messageElement.innerHTML = `
+                    <div class="message-header">
+                        <i class="fas fa-info-circle"></i> 系统提示
+                    </div>
+                    ${message}
+                `;
+                messageElement.style.opacity = '0.8';
+            }
+            
+            chatContainer.appendChild(messageElement);
+            // 滚动到最新消息
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // 显示打字指示器
+        function showTypingIndicator() {
+            const typingElement = document.createElement('div');
+            typingElement.className = 'typing-indicator';
+            typingElement.id = 'typingIndicator';
+            typingElement.innerHTML = `
+                <span></span>
+                <span></span>
+                <span></span>
+            `;
+            chatContainer.appendChild(typingElement);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // 隐藏打字指示器
+        function hideTypingIndicator() {
+            const typingIndicator = document.getElementById('typingIndicator');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+        }
+
+        // 发送消息到API - 所有接口都是GET请求
+        async function sendMessageToAPI(message) {
+            // 构建完整URL，添加question参数
+            const url = `${currentModel.endpoint}?question=${encodeURIComponent(message)}`;
+            
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'text/plain',
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP错误: ${response.status}`);
+                }
+                
+                const text = await response.text();
+                return text.trim();
+            } catch (error) {
+                console.error('API请求失败:', error);
+                return `抱歉，请求${currentModel.name}时出现错误: ${error.message}`;
+            }
+        }
+
+        // 处理发送消息
+        async function handleSendMessage() {
+            const message = userInput.value.trim();
+            
+            if (!message || isWaitingForResponse) return;
+            
+            // 添加用户消息到聊天
+            addMessageToChat('user', message);
+            
+            // 清空输入框
+            userInput.value = '';
+            autoResizeTextarea();
+            
+            // 禁用发送按钮，显示打字指示器
+            isWaitingForResponse = true;
+            sendButton.disabled = true;
+            showTypingIndicator();
+            
+            // 发送到API
+            const aiResponse = await sendMessageToAPI(message);
+            
+            // 隐藏打字指示器，启用发送按钮
+            hideTypingIndicator();
+            isWaitingForResponse = false;
+            sendButton.disabled = false;
+            
+            // 添加AI回复到聊天
+            addMessageToChat('ai', aiResponse);
+            
+            // 保存到历史记录
+            conversationHistory.push({
+                user: message,
+                ai: aiResponse,
+                model: currentModel.name,
+                timestamp: new Date().toISOString()
+            });
+        }
+
+        // 清空聊天
+        function clearChat() {
+            if (confirm('确定要清空所有对话记录吗？')) {
+                chatContainer.innerHTML = '';
+                conversationHistory = [];
+                
+                // 添加欢迎消息
+                addMessageToChat('ai', '您好！我是MangoAI助手，支持6种不同的AI模型。请从左侧选择您想对话的AI模型，然后开始提问吧！所有接口均为GET请求，使用简单快捷。');
+            }
+        }
+
+        // 自动调整输入框高度
+        function autoResizeTextarea() {
+            userInput.style.height = 'auto';
+            const newHeight = Math.min(userInput.scrollHeight, 150);
+            userInput.style.height = newHeight + 'px';
+        }
+
+        // 检查API状态
+        async function checkAPIStatus() {
+            try {
+                // 测试第一个API
+                const testUrl = `${models[0].endpoint}?question=test`;
+                const response = await fetch(testUrl, { method: 'GET' });
+                
+                if (response.ok) {
+                    statusIndicator.innerHTML = '<i class="fas fa-circle"></i> 所有模型可用';
+                    statusIndicator.className = 'status-indicator online';
+                } else {
+                    statusIndicator.innerHTML = '<i class="fas fa-circle"></i> 部分API可能不可用';
+                    statusIndicator.className = 'status-indicator offline';
+                }
+            } catch (error) {
+                statusIndicator.innerHTML = '<i class="fas fa-circle"></i> 网络连接异常';
+                statusIndicator.className = 'status-indicator offline';
+            }
+        }
+
+        // 初始化
+        function init() {
+            // 初始化模型列表事件
+            initModelListEvents();
+            
+            // 更新当前模型显示
+            updateCurrentModelDisplay();
+            
+            // 事件监听器
+            sendButton.addEventListener('click', handleSendMessage);
+            
+            userInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                }
+            });
+            
+            userInput.addEventListener('input', autoResizeTextarea);
+            
+            clearChatButton.addEventListener('click', clearChat);
+            
+            // 快捷问题点击事件
+            quickQuestions.forEach(question => {
+                question.addEventListener('click', () => {
+                    const questionText = question.getAttribute('data-question');
+                    userInput.value = questionText;
+                    autoResizeTextarea();
+                    userInput.focus();
+                });
+            });
+            
+            // 检查API状态
+            checkAPIStatus();
+            
+            // 确保侧边栏在加载时可见
+            setTimeout(() => {
+                const sidebar = document.querySelector('.sidebar');
+                sidebar.style.opacity = '1';
+            }, 100);
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
